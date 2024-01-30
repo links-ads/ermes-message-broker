@@ -19,5 +19,38 @@ $ docker compose up
 ```
 
 ### SSL Configuration through Nginx
+RabbitMQ itself is configured to use the default port on `5672`, while `nginx` handles the SSL and reverse proxy part.
+The steps to configure this communication are as follows:
 
-In the `nginx` directory you can find an example configuration to use the standard RabbitMQ endpoints, with SSL encryption provided by a reverse nginx proxy (which is the usual setup when deploying RabbitMQ in a VM with other services and tools.
+1. Register a new subdomain, e.g. `bus.example.com` for the IP of the machine you deployed this RMQ container.
+
+2. Generate a standard SSL certificate using certbot: this will serve for both the HTTPS management dashboard and the AMQP connections.
+
+3. Following the files in the [nginx](nginx/) folder, configure your server accordingly:
+
+    - customize the `bus.example.conf` file to your needs, and place it under `/etc/nginx/sites-available/` (with the usual soft link to enable it).
+    - customize `bus.example.certificates.conf` and `bus.example.tcp.conf` to your needs, then place them under `/etc/nginx/snippets`
+
+4. Add the custom snippets to your main `nginx.conf`:
+
+```conf
+events {
+    ...
+}
+
+http {
+    ...
+}
+
+# TCP or UDP streams
+stream {
+    include /etc/nginx/snippets/bus.example.tcp.conf;
+    ...
+}
+```
+
+5. At last, you can test if everything is working by `sudo nginx -t, and hopefully, reload the configuration to apply changes (`sudo systemctl reload nginx` or similar).
+
+## Future works
+
+- Introduce Kafka as an additional broker option through an additional profile.
