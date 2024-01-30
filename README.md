@@ -17,3 +17,7 @@ This setup has been tested on Linux machines only, we do not exclude that it mig
 ```bash
 $ docker compose up
 ```
+
+### SSL Configuration through Nginx
+
+In the `nginx` directory you can find an example configuration to use the standard RabbitMQ endpoints, with SSL encryption provided by a reverse nginx proxy (which is the usual setup when deploying RabbitMQ in a VM with other services and tools.
