@@ -14,9 +14,6 @@ This repository provides a standard deployment, without project-specific configu
 The tool is run using Docker Compose, make sure to install it before proceeding.
 This setup has been tested on Linux machines only, we do not exclude that it might work on other systems, up to you to test it!
 
-```bash
-$ docker compose up
-```
 
 ### SSL Configuration through Nginx
 RabbitMQ itself is configured to use the default port on `5672`, while `nginx` handles the SSL and reverse proxy part.
@@ -49,7 +46,17 @@ stream {
 }
 ```
 
-5. At last, you can test if everything is working by `sudo nginx -t, and hopefully, reload the configuration to apply changes (`sudo systemctl reload nginx` or similar).
+5. Once you've done all this, remember to edit the `env.example` file to your needs: copy it, rename it `.env`, and change every variable according to your configuration. In a usual Certbot installation, the location of your certificates should be `/etc/letsencrypt/live/bus.example.com/*` or similar.
+
+6. You can test if everything is working by `sudo nginx -t`, and hopefully, reload the configuration to apply changes (`sudo systemctl reload nginx` or similar).
+
+7. Once everything is ready on the main machine, simply launch the broker container with:
+
+```bash
+$ docker compose up
+```
+
+8. Enjoy your message bus!
 
 ## Future works
 

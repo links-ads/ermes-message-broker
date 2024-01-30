@@ -16,4 +16,5 @@ services:
       - .env
     volumes:
       - rmq-data:/var/lib/rabbitmq
+      - ${RABBITMQ_CERTS_PATH}:${RABBITMQ_CERTS_PATH}:ro
     restart: unless-stopped
