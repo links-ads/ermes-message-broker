@@ -1,0 +1,19 @@
+version: "3"
+
+volumes:
+  rmq-data:
+    driver: local
+
+services:
+  rabbitmq:
+
+    container_name: ermes-broker
+    image: rabbitmq:3.12-management-alpine
+    ports:
+      - 127.0.0.1:5672:5672
+      - 127.0.0.1:15672:15672
+    env_file:
+      - .env
+    volumes:
+      - rmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
