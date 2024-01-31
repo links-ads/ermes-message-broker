@@ -57,7 +57,3 @@ $ docker compose up
 ```
 
 8. Enjoy your message bus!
-
-## Future works
-
-- Introduce Kafka as an additional broker option through an additional profile.
