@@ -6,14 +6,20 @@ volumes:
 
 services:
   rabbitmq:
+    build:
+      context: containers/rabbitmq
+      dockerfile: rabbitmq.dockerfile
+      args:
+        RABBITMQ_VERSION: ${RABBITMQ_VERSION:-3.12-management-alpine}
+    image: links/rabbitmq:${RABBITMQ_VERSION:-3.12-management-alpine}
     container_name: ermes-broker
-    image: rabbitmq:3.12-management-alpine
     ports:
-      - 127.0.0.1:5672:5672
+      - 127.0.0.1:5671:5671
       - 127.0.0.1:15672:15672
-    env_file:
-      - .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-admin}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-/}
     volumes:
       - rmq-data:/var/lib/rabbitmq
-      - ${RABBITMQ_CERTS_PATH}:${RABBITMQ_CERTS_PATH}:ro
     restart: unless-stopped
