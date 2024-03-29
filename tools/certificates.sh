@@ -92,7 +92,7 @@ main() {
     else
         # Default behavior: clone if necessary, generate with no custom arguments, and copy
         clone_repo "$REPO_URL" "$REPO_DIR"
-        generate_certs "$REPO_DIR"
+        generate_certs "$REPO_DIR" "$@"
         copy_certs "$REPO_DIR" "$CERTS_DEST"
     fi
     printf "TLS certificates have been successfully processed.\n"
