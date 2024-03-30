@@ -15,45 +15,52 @@ The tool is run using Docker Compose, make sure to install it before proceeding.
 This setup has been tested on Linux machines only, we do not exclude that it might work on other systems, up to you to test it!
 
 
-### SSL Configuration through Nginx
-RabbitMQ itself is configured to use the default port on `5672`, while `nginx` handles the SSL and reverse proxy part.
-The steps to configure this communication are as follows:
+### SSL Authentication
 
-1. Register a new subdomain, e.g. `bus.example.com` for the IP of the machine you deployed this RMQ container.
+RabbitMQ is configured to use the default SSL port on `5671`, while `nginx` acts as reverse proxy.
 
-2. Generate a standard SSL certificate using certbot: this will serve for both the HTTPS management dashboard and the AMQP connections.
+Authentication is enabled through the `EXTERNAL` mechanism, which requires the client to provide a valid SSL certificate to connect to the broker, where the Common Name (CN) must match the username.
 
-3. Following the files in the [nginx](nginx/) folder, configure your server accordingly:
+To facilitate the certificate generation, a script is provided in the `tools` folder, which clones the [tls-gen](https://github.com/rabbitmq/tls-gen) repository and generates the necessary files.
 
-    - customize the `bus.example.conf` file to your needs, and place it under `/etc/nginx/sites-available/` (with the usual soft link to enable it).
-    - customize `bus.example.certificates.conf` and `bus.example.tcp.conf` to your needs, then place them under `/etc/nginx/snippets`
+The steps to get a full container up and running are as follows:
 
-4. Add the custom snippets to your main `nginx.conf`:
-
-```conf
-events {
-    ...
-}
-
-http {
-    ...
-}
-
-# TCP or UDP streams
-stream {
-    include /etc/nginx/snippets/bus.example.tcp.conf;
-    ...
-}
-```
-
-5. Once you've done all this, remember to edit the `env.example` file to your needs: copy it, rename it `.env`, and change every variable according to your configuration. In a usual Certbot installation, the location of your certificates should be `/etc/letsencrypt/live/bus.example.com/*` or similar.
-
-6. You can test if everything is working by `sudo nginx -t`, and hopefully, reload the configuration to apply changes (`sudo systemctl reload nginx` or similar).
-
-7. Once everything is ready on the main machine, simply launch the broker container with:
+1. Launch the [tools/certificates.sh](tools/certificates.sh) script.
 
 ```bash
-$ docker compose up
+$ bash tools/certificates.sh CN=example
 ```
 
-8. Enjoy your message bus!
+Where `CN` is the Common Name of the certificate, if empty the hostname will be used.
+In a single pass, the script will take care of:
+    - generating of a Certificate Authority (CA) certificate and key, a server certificate and key, and a client certificate and key
+    - copying the necessary files to the `containers/rabbitmq/certs` folder for the container to use.
+
+2. Copy the `env.example` file to `.env` and edit it to your needs.
+
+2. Build and run the broker container with:
+
+```bash
+$ docker compose up --build [-d]
+```
+
+3. Enter the management dashboard exposed on port `15672` and log in with the credentials provided in the `.env` file.
+
+4. Create a new user with the same name as the CN of the client certificate, and assign it the required permissions.
+
+5. Connect to the broker using the client certificate and the user created in the previous step. You can test the connection using the [tools/test_connection.py](tools/test_connection.py) script (remember to create a virtual environment and install `pika`).
+
+6. Configure `nginx` or any other reverse proxy to handle both the SSL AMQP connection and the management dashboard. Check the [nginx](/nginx/) folder for an example configuration.
+
+### Optional: additional client certificates
+
+If you need to add more client certificates, you can use the same script as before, but adding the `gen-client` flag at the end.
+
+```bash
+$ bash tools/certificates.sh CN=example gen-client
+```
+This will generate a new client certificate and key, and copy them to the `containers/rabbitmq/certs` folder once again.
+
+> [!IMPORTANT]
+>
+> Remember to create a new user in the RabbitMQ management dashboard with the same name as the CN of the client certificate, assign it the required permissions, and share the triplet of `ca_certificate.pem`, `client_certificate.pem`, and `client_key.pem` with the actual client, together with the selected username.
