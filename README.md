@@ -50,7 +50,7 @@ $ docker compose up --build [-d]
 
 5. Connect to the broker using the client certificate and the user created in the previous step. You can test the connection using the [tools/test_connection.py](tools/test_connection.py) script (remember to create a virtual environment and install `pika`).
 
-6. Configure `nginx` or any other reverse proxy to handle both the SSL AMQP connection and the management dashboard. Check the [nginx](/nginx/) folder for an example configuration.
+6. Configure `nginx` or similar tools to handle the reverse proxy to the management dashboard. Check the [nginx](/nginx/) folder for an example configuration.
 
 ### Optional: additional client certificates
 
