@@ -21,22 +21,25 @@ RabbitMQ is configured to use the default SSL port on `5671`, while `nginx` acts
 
 Authentication is enabled through the `EXTERNAL` mechanism, which requires the client to provide a valid SSL certificate to connect to the broker, where the Common Name (CN) must match the username.
 
-To facilitate the certificate generation, a script is provided in the `tools` folder, which clones the [tls-gen](https://github.com/rabbitmq/tls-gen) repository and generates the necessary files.
+To facilitate the certificate generation, a script is provided in the [certs](certs/) folder, using `openssl` to generate the necessary files.
 
 The steps to get a full container up and running are as follows:
 
-1. Launch the [tools/certificates.sh](tools/certificates.sh) script.
+1. Launch the [certs/certgen.sh](certs/certgen.sh) script to generate the necessary files, namely CA and server certificates.
 
 ```bash
-$ bash tools/certificates.sh CN=example
+# Generate the CA certificate and key
+$ bash certs/certgen.sh -c example.com -o organization ca
+# Generate the server certificate and key
+$ bash certs/certgen.sh -c example.com -o organization server
+# Generate certificate and key for every client
+$ bash certs/certgen.sh -c username -o organization client
 ```
 
-Where `CN` is the Common Name of the certificate, if empty the hostname will be used.
-In a single pass, the script will take care of:
-    - generating of a Certificate Authority (CA) certificate and key, a server certificate and key, and a client certificate and key
-    - copying the necessary files to the `containers/rabbitmq/certs` folder for the container to use.
+Where `-c` is the Common Name of the certificate, while `-o` is the organization name.
+The script will generate the necessary files in the `certs` folder.
 
-2. Copy the `env.example` file to `.env` and edit it to your needs.
+2. Copy the `env.example` file to `.env` and edit it to your needs, settings the admin credentials.
 
 2. Build and run the broker container with:
 
@@ -54,13 +57,17 @@ $ docker compose up --build [-d]
 
 ### Optional: additional client certificates
 
-If you need to add more client certificates, you can use the same script as before, but adding the `gen-client` flag at the end.
+If you need to add more client certificates, you can use the same script as before, but adding the `client` flag at the end.
 
 ```bash
-$ bash tools/certificates.sh CN=example gen-client
+$  bash certs/certgen.sh -c new_user -o new_org client
 ```
-This will generate a new client certificate and key, and copy them to the `containers/rabbitmq/certs` folder once again.
+This will generate a new client certificate and key in the `certs` folder, which you can share with the client.
 
 > [!IMPORTANT]
 >
 > Remember to create a new user in the RabbitMQ management dashboard with the same name as the CN of the client certificate, assign it the required permissions, and share the triplet of `ca_certificate.pem`, `client_certificate.pem`, and `client_key.pem` with the actual client, together with the selected username.
+
+> [!WARNING]
+>
+> The server certificate will use the Alternative Name (SAN) field to allow multiple CNs, this means that for new deployments you will need to regenerate the server certificate with the new CNs.
