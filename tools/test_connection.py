@@ -57,8 +57,8 @@ def main():
         print(" [x] Sent 'Hello, RabbitMQ!'")
 
         connection.close()
-    except pika.exceptions.AMQPError as e:
-        print("Error:", e)
+    except Exception as e:
+        print("Error:", str(e))
 
 
 if __name__ == "__main__":

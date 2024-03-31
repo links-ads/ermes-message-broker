@@ -10,5 +10,5 @@ RUN chown -R rabbitmq:rabbitmq /etc/rabbitmq/certs
 
 
 # Copy the configuration file
-COPY rabbitmq.conf /etc/rabbitmq/rabbitmq.conf
+COPY containers/rabbitmq/rabbitmq.conf /etc/rabbitmq/rabbitmq.conf
 RUN rabbitmq-plugins enable --offline ${RABBITMQ_PLUGINS}

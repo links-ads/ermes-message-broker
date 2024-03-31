@@ -7,8 +7,8 @@ volumes:
 services:
   rabbitmq:
     build:
-      context: containers/rabbitmq
-      dockerfile: rabbitmq.dockerfile
+      context: .
+      dockerfile: containers/rabbitmq/rabbitmq.dockerfile
       args:
         RABBITMQ_VERSION: ${RABBITMQ_VERSION:-3.12-management-alpine}
     image: links/rabbitmq:${RABBITMQ_VERSION:-3.12-management-alpine}
