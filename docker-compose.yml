@@ -13,6 +13,7 @@ services:
         RABBITMQ_VERSION: ${RABBITMQ_VERSION:-3.13-management-alpine}
     image: links/rabbitmq:${RABBITMQ_VERSION:-3.13-management-alpine}
     container_name: ermes-broker
+    hostname: ee05faa74f02
     ports:
       - 0.0.0.0:5671:5671
       - 127.0.0.1:15672:15672
