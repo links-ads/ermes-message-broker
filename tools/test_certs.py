@@ -3,15 +3,16 @@ import os
 import ssl
 
 import pika
+from pika.credentials import ExternalCredentials
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Connect to RabbitMQ server using TLS")
     parser.add_argument(
-        "--username", default="admin", help="Username for RabbitMQ authentication"
+        "--username", default="none", help="Username for RabbitMQ authentication"
     )
     parser.add_argument(
-        "--password", default="admin", help="Password for RabbitMQ authentication"
+        "--password", default="none", help="Password for RabbitMQ authentication"
     )
     parser.add_argument(
         "--server-host", default="localhost", help="URL of RabbitMQ server"
@@ -51,9 +52,9 @@ def main():
     assert os.path.exists(cert_file), f"Client certificate file not found: {cert_file}"
     assert os.path.exists(key_file), f"Client key file not found: {key_file}"
 
-    credentials = pika.credentials.ExternalCredentials()
+    credentials = ExternalCredentials()
     ssl_options = get_tls_parameters(args.server_host, ca_file, cert_file, key_file)
-
+    channel = connection = None
     try:
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
@@ -92,10 +93,12 @@ def main():
     finally:
         # the queue does not need to be created and destroyed each time
         # in a production setting, the queues will be fixed and persistent
-        channel.queue_delete(queue="q.hello")
-        # last, we close the channel and connection to free the resources
-        channel.close()
-        connection.close()
+        if channel:
+            channel.queue_delete(queue="q.hello")
+            # last, we close the channel and connection to free the resources
+            channel.close()
+        if connection:
+            connection.close()
 
 
 if __name__ == "__main__":

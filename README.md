@@ -17,9 +17,11 @@ This setup has been tested on Linux machines only, we do not exclude that it mig
 
 ### SSL Authentication
 
-RabbitMQ is configured to use the default SSL port on `5671`, while `nginx` acts as reverse proxy.
+RabbitMQ is configured to use the default SSL port on `5671` for AMQP, while `nginx` acts as reverse proxy for the web UI.
 
-Authentication is enabled through the `EXTERNAL` mechanism, which requires the client to provide a valid SSL certificate to connect to the broker, where the Common Name (CN) must match the username.
+Authentication is enabled through the `PLAIN` and `EXTERNAL` mechanisms.
+ - `PLAIN` requires simple **username** and **password** authentication, with an empty SSL context.
+ - `EXTERNAL` is instead a key-based authentication, requiring `client_certificate.pem` and `client_key.pem`, similar to a SSH public key authentication. In this case, the certificate's Common Name (CN) in the client certificate must match the RabbitMQ username.
 
 To facilitate the certificate generation, a script is provided in the [certs](certs/) folder, using `openssl` to generate the necessary files.
 
@@ -29,11 +31,11 @@ The steps to get a full container up and running are as follows:
 
 ```bash
 # Generate the CA certificate and key
-$ bash certs/certgen.sh -c example.com -o organization ca
+$ bash certs/certgen.sh -c example.com -o <organization> ca
 # Generate the server certificate and key
-$ bash certs/certgen.sh -c example.com -o organization server
-# Generate certificate and key for every client
-$ bash certs/certgen.sh -c username -o organization client
+$ bash certs/certgen.sh -c example.com -o <organization> server
+# (Optional)For EXTERNAL auth, enerate certificate and key for every client
+$ bash certs/certgen.sh -c <username> -o <organization> client
 ```
 
 Where `-c` is the Common Name of the certificate, while `-o` is the organization name.
@@ -51,9 +53,48 @@ $ docker compose up --build [-d]
 
 4. Create a new user with the same name as the CN of the client certificate, and assign it the required permissions.
 
-5. Connect to the broker using the client certificate and the user created in the previous step. You can test the connection using the [tools/test_connection.py](tools/test_connection.py) script (remember to create a virtual environment and install `pika`).
+### Testing the connection
 
-6. Configure `nginx` or similar tools to handle the reverse proxy to the management dashboard. Check the [nginx](/nginx/) folder for an example configuration.
+In the `tools` directory you will find two simple Python scripts using `pika`. To launch them you'll first need a Python distribution and the `pika` library installed, e.g.:
+
+```bash
+$ uv venv
+$ uv pip install pika
+```
+
+#### Plain Credentials
+
+This is the easiest way to connect.
+1. Create a user and assign the required permissions.
+
+2. Launch the `tools/test_plain.py` script like so:
+
+```bash
+$ python tools/test_plain.py --username <youruser> --password <yourpass> [OPTIONAL: --ca-cert <path/to/ca_certificate.pem]
+```
+
+3. If everything goes well, the script will publish and read its own `Hello!` message. Remember to provide the CA certificate file if you have one, since it's always better to verify the host you're connecting to, unless you trust it.
+
+#### External Credentials
+
+This is more robust, but requires 3 files in total: one CA certificate file, one client certificate, and one client key.
+
+1. Create the user and assign the necessary permissions.
+
+2. Launch the `tools/test_certs.py` script:
+
+```bash
+$ python tools/test_certs.py --username <user> -CA certs/ca_certificate.pem -C certs/client_certificate.pem -K certs/client_key.pem
+```
+
+### Optional: nginx proxy
+
+The `nginx/` folder contains an example of configuration to enable HTTPS on the RabbitMQ UI. The configuration assumes that the instance will be associated with its own registered domain, and not a subpath.
+It is possible to deploy the management UI under a subpath (e.g., example.com/rabbitmq), but it requires adding the following to the `rabbitmq.conf` file (and consequently rebuild the container).
+
+```conf
+management.path_prefix = /rabbitmq
+```
 
 ### Optional: additional client certificates
 
