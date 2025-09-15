@@ -52,11 +52,11 @@ generate_server_cert() {
 
 # Function to generate client certificate
 generate_client_cert() {
-    openssl genrsa -out "$cert_dir/client_${cn}_key.pem" 2048
-    openssl req -new -key "$cert_dir/client_${cn}_key.pem" -out "$cert_dir/client_${cn}_csr.pem" \
+    openssl genrsa -out "$cert_dir/client_${org}_key.pem" 2048
+    openssl req -new -key "$cert_dir/client_${org}_key.pem" -out "$cert_dir/client_${org}_csr.pem" \
       -subj "/O=$org/CN=$cn"
-    openssl x509 -req -in "$cert_dir/client_${cn}_csr.pem" -CA $ca_cert -CAkey $ca_key -CAcreateserial \
-      -out "$cert_dir/client_${cn}_certificate.pem" -days 3650 -sha256 \
+    openssl x509 -req -in "$cert_dir/client_${org}_csr.pem" -CA $ca_cert -CAkey $ca_key -CAcreateserial \
+      -out "$cert_dir/client_${org}_certificate.pem" -days 3650 -sha256 \
       -extfile <(printf "subjectAltName=DNS:localhost,DNS:$cn,DNS:*.$cn")
 }
 
